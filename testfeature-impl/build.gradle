@@ -22,10 +22,15 @@ android {
 }
 
 dependencies {
+
+    // эмулируем очень жирный код и кучу мусорных зависимостей
+    implementation("com.yandex.android:maps.mobile:4.0.0-lite")
+
     implementation project(':core')
     implementation project(':testfeature-api')
 }
 
+// эмулируем очень большое время сборки
 tasks.register("delay") {
     doFirst {
         println("Emulating very long feature module build")
