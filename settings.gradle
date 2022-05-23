@@ -14,3 +14,6 @@ include ':core'
 include ':testfeature-api'
 include ':testfeature-impl'
 include ':app-di'
+
+// решение через простую замену projectDir для модуля, данные читаются из файла с пропертями
+apply from: "./exclude_simple_replace_project_dir.gradle"
