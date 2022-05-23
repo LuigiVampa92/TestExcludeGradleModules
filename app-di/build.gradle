@@ -24,5 +24,4 @@ dependencies {
     implementation project(':core')
     implementation project(':testfeature-api')
     implementation project(':testfeature-impl')
-//    implementation project(':testfeature-noop')
 }
