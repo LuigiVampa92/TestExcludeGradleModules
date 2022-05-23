@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    compileSdk 32
+    compileSdk setup.compileSdk
     defaultConfig {
         applicationId "com.luigivampa92.excludemodules"
-        minSdk 23
-        targetSdk 32
-        versionCode 1
-        versionName "1.0"
+        minSdk setup.minSdk
+        targetSdk setup.targetSdk
+        versionCode appVersionCode
+        versionName appVersionName
     }
     buildTypes {
         release {
