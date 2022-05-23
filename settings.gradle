@@ -1,0 +1,17 @@
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        jcenter()
+    }
+}
+
+rootProject.name = "ExcludeModules"
+
+include ':app'
+include ':core'
+include ':testfeature-api'
+include ':testfeature-impl'
+include ':testfeature-noop'
+include ':app-di'
