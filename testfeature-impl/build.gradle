@@ -18,9 +18,18 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
+    project.tasks.preBuild.dependsOn("delay")
 }
 
 dependencies {
     implementation project(':core')
     implementation project(':testfeature-api')
+}
+
+tasks.register("delay") {
+    doFirst {
+        println("Emulating very long feature module build")
+        Thread.sleep(10000L)
+        println("feature module very long build complete")
+    }
 }
