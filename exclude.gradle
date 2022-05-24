@@ -1,4 +1,6 @@
-// !! убедиться что сборка идёт на машине разработчика !! параметр или специальный файл
+// todo !! убедиться что сборка идёт на машине разработчика !! параметр или специальный файл
+// todo log debug !
+// todo try to compile and make sure stubs work
 
 def modulesToExcludeFromHandling = [ ':', ':app' ]
 def featureModuleSuffix = 'impl'
@@ -20,12 +22,6 @@ def excludeProjectsByPaths(projectsSet, excludePathsSet) {
 
 def flattenProjects(complexProject) {
     HashSet<Project> result = new HashSet<>()
-
-    def path = complexProject.path
-    def dir = complexProject.projectDir
-
-//    println("-\n --- PROJECT [$path] - [$dir] ---\n")
-
     if (complexProject.hasProperty("children")) {
         def childrenPaths = complexProject.properties.get("children")
         if (childrenPaths.size() > 0) {
@@ -33,96 +29,61 @@ def flattenProjects(complexProject) {
                 try {
                     def childProject = project("$childProjectPath")
                     result.addAll(flattenProjects(childProject))
-                } catch (Throwable e) {
-//                    println("ERROR - ${e.message}")
+                } catch (Throwable ignored) {
                 }
             }
         } else {
-
-//            println("ZERO CHILDREN")
-
             result.add(complexProject)
         }
     } else {
-
-//        println("NO CHILDREN")
-
         result.add(complexProject)
     }
-
     return (Set<Project>) result
 }
 
 def getProjectStubDir(inspectedProject, featureModuleSuffix, stubSuffixes) {
     def shortName = inspectedProject.name
     def inspectedDir = inspectedProject.projectDir.getParentFile()
-
-//    println("Check for project [${inspectedProject.path}] ($shortName) dir $inspectedDir")
-
     for (stubSuffix in stubSuffixes) {
-
-//        println("Check stub suffix $stubSuffix")
-
         if (shortName == featureModuleSuffix) {
             def f = new File(inspectedDir, stubSuffix)
-
-//            println("Check $f")
-
             if (f != null && f.exists() && f.isDirectory()) {
-
-//                println("Found [$shortName] stub at $f")
-
-                return f
+                def buildScriptFile = new File(f, "build.gradle")
+                if (buildScriptFile != null && buildScriptFile.exists() && !buildScriptFile.isDirectory()) {
+                    return f
+                }
             }
         }
         else if ("$shortName".endsWith("-$featureModuleSuffix")) {
             def prefix = shortName.substring(0, shortName.indexOf("-$featureModuleSuffix"))
             def newName = prefix + "-$stubSuffix"
             def f = new File(inspectedDir, newName)
-
-//            println("Check $f")
-
             if (f != null && f.exists() && f.isDirectory()) {
-
-//                println("Found [$shortName] stub at $f")
-
-                return f
+                def buildScriptFile = new File(f, "build.gradle")
+                if (buildScriptFile != null && buildScriptFile.exists() && !buildScriptFile.isDirectory()) {
+                    return f
+                }
             }
         }
         else {
-
             def f = new File(inspectedDir, "$shortName-$stubSuffix")
-
-//            println("Check $f")
-
             if (f != null && f.exists() && f.isDirectory()) {
-
-//                println("Found [$shortName] stub at $f")
-
-                return f
-            } else {
-//                println("Didnt found [$shortName] stub")
+                def buildScriptFile = new File(f, "build.gradle")
+                if (buildScriptFile != null && buildScriptFile.exists() && !buildScriptFile.isDirectory()) {
+                    return f
+                }
             }
         }
-
     }
-
     return null
 }
 
-
-
-
-
-
-
-
-
 def projects = excludeProjectsByPaths(flattenProjects(rootProject), modulesToExcludeFromHandling)
 projects.forEach {
-    def f = getProjectStubDir(it, featureModuleSuffix, stubSuffixes)
-    if (f != null) {
-        println("For module [${it.path}] found a stub [$f]")
+    def stubDir = getProjectStubDir(it, featureModuleSuffix, stubSuffixes)
+    if (stubDir != null) {
+        println("For module [${it.path}] assigned a stub [$stubDir]")
+        it.projectDir = stubDir
     }
 }
 
@@ -134,71 +95,6 @@ projects.forEach {
 //println("PROJECT PROPERTIES:")
 //println(rootProject.properties)
 
-
-
-
-//def children = rootProject.properties.get("children")
-//
-//println("TOTAL PROJECTS: ${children.size()}")
-//for (childProjectStr in children) {
-//    def childProject = project("$childProjectStr")
-//    def childProjectName = childProject.name
-//    def childProjectPath = childProject.path
-//    def childProjectDir = childProject.projectDir
-//    def childChildren = childProject.properties.get("children")
-//    println("-\n --- PROJECT [$childProjectName] - [$childProjectPath] - [$childProjectDir] ---\n")
-//    println("CHILDREN: ${childChildren.size()}")
-//}
-
-// уложить в плоскую структуру
-
-//try {
-//    def proj = project(":testfeature-impl")
-//    def bf = proj.buildFile
-//    def text = bf.getText('UTF-8')
-//
-//    println(text)
-//
-//} catch (Exception e) {
-//    println(e)
-//}
-
-// подобрать список кандидатов?
-// найти первого подходящего кандидата
-
-
-
-// ??? попробовать его собрать, убедиться что он работает ???
-
-//HashMap<String,String> excludePropertiesMap = new HashMap<>()
-//File excludePropertiesFile = new File("exclude_simple_replace_project_dir.properties")
-//if (excludePropertiesFile.exists()) {
-//    println("exclude properties configs file EXISTS")
-//    Properties excludeProperties = new Properties()
-//    excludeProperties.load(excludePropertiesFile.newDataInputStream())
-//    excludeProperties.putAll(excludePropertiesMap)
-//    excludeProperties.stringPropertyNames().forEach {
-//        excludePropertiesMap.put(it, excludeProperties.getProperty(it))
-//    }
-//} else {
-//    println("exclude properties configs file does NOT exist")
-//}
-//for (entry in excludePropertiesMap) {
-//    println("[${entry.key}] -> [${entry.value}]")
-//    project(":${entry.key}").projectDir = new File("${entry.value}")
-//}
-
-//println(project(":testfeature-impl").name)
-
-//
-//println("PROJECT NAME: ${rootProject.name}")
-//println("PROJECT DIR: ${rootProject.getProjectDir()}")
-//
-//println("PROJECT PROPERTIES:")
-//println(rootProject.properties)
-//
-//HashMap<String,String> excludePropertiesMap = new HashMap<>()
-//
 //File excludePropertiesFile = new File("exclude_simple_replace_project_dir.properties")
 //if (excludePropertiesFile.exists()) {
 //    println("exclude properties configs file EXISTS")
