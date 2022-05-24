@@ -21,4 +21,4 @@ include ':nestedfeature:impl'
 
 include ':standalonefeature'
 
-apply from: "./exclude.gradle"
+apply from: "./stubs.gradle"

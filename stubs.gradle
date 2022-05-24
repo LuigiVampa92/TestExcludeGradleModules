@@ -1,0 +1,166 @@
+def stubsConfigProperties = 'local.properties'
+def stubsEnabledKey = 'stubs.enabled'
+def stubsLogsEnabledKey = 'stubs.logs.enabled'
+def configListStubsAvailable = 'stubs_available.conf'
+def configListStubsActivated = 'stubs.conf'
+def projectsToExcludeFromHandling = [ ':', ':app' ]
+def featureModuleSuffix = 'impl'
+def stubSuffixes = [ 'noop', 'stub' ]
+
+def excludeProjectsByPaths(projectsSet, excludePathsSet) {
+    def result = new HashSet<Project>(projectsSet)
+    def iterator = result.iterator()
+    while (iterator.hasNext()) {
+        def project = iterator.next()
+        for (excludedPath in excludePathsSet) {
+            if (excludedPath == project.path) {
+                iterator.remove()
+            }
+        }
+    }
+    return (Set<Project>) result
+}
+
+def filterProjectsByPaths(projectsSet, filterPathsSet) {
+    def result = new HashSet<Project>(projectsSet)
+    def iterator = result.iterator()
+    while (iterator.hasNext()) {
+        def project = iterator.next()
+        def keep = false
+        for (filterPath in filterPathsSet) {
+            if (filterPath == project.path) {
+                keep = true
+            }
+        }
+        if (!keep) {
+            iterator.remove()
+        }
+    }
+    return (Set<Project>) result
+}
+
+def flattenProjects(complexProject) {
+    HashSet<Project> result = new HashSet<>()
+    if (complexProject.hasProperty("children")) {
+        def childrenPaths = complexProject.properties.get("children")
+        if (childrenPaths.size() > 0) {
+            for (childProjectPath in childrenPaths) {
+                try {
+                    def childProject = project("$childProjectPath")
+                    result.addAll(flattenProjects(childProject))
+                }
+                catch (Throwable ignored) {}
+            }
+        } else {
+            result.add(complexProject)
+        }
+    } else {
+        result.add(complexProject)
+    }
+    return (Set<Project>) result
+}
+
+def getProjectStubDir(inspectedProject, featureModuleSuffix, stubSuffixes) {
+    def shortName = inspectedProject.name
+    def inspectedDir = inspectedProject.projectDir.getParentFile()
+    for (stubSuffix in stubSuffixes) {
+        if (shortName == featureModuleSuffix) {
+            def f = new File(inspectedDir, stubSuffix)
+            if (f != null && f.exists() && f.isDirectory()) {
+                def buildScriptFile = new File(f, "build.gradle")
+                if (buildScriptFile != null && buildScriptFile.exists() && !buildScriptFile.isDirectory()) {
+                    return f
+                }
+            }
+        }
+        else if ("$shortName".endsWith("-$featureModuleSuffix")) {
+            def prefix = shortName.substring(0, shortName.indexOf("-$featureModuleSuffix"))
+            def newName = prefix + "-$stubSuffix"
+            def f = new File(inspectedDir, newName)
+            if (f != null && f.exists() && f.isDirectory()) {
+                def buildScriptFile = new File(f, "build.gradle")
+                if (buildScriptFile != null && buildScriptFile.exists() && !buildScriptFile.isDirectory()) {
+                    return f
+                }
+            }
+        }
+        else {
+            def f = new File(inspectedDir, "$shortName-$stubSuffix")
+            if (f != null && f.exists() && f.isDirectory()) {
+                def buildScriptFile = new File(f, "build.gradle")
+                if (buildScriptFile != null && buildScriptFile.exists() && !buildScriptFile.isDirectory()) {
+                    return f
+                }
+            }
+        }
+    }
+    return null
+}
+
+def getProjectStubsListFromFile(filePath) {
+    HashSet<String> result = new HashSet<>()
+    try {
+        File file = new File(filePath)
+        if (file.exists()) {
+            for (line in file.text.readLines()) {
+                if (line.startsWith(":")) {
+                    try {
+                        def p = project(line)
+                        result.add(line)
+                    }
+                    catch (Throwable ignored) {}
+                }
+            }
+        }
+    }
+    catch (Throwable ignored) {}
+    return result
+}
+
+def getPropertiesMapFromFile(filePath) {
+    HashMap<String,String> result = new HashMap<>()
+    try {
+        File file = new File(filePath)
+        if (file.exists()) {
+            Properties props = new Properties()
+            props.load(file.newDataInputStream())
+            props.stringPropertyNames().forEach {
+                result.put(it, props.getProperty(it))
+            }
+        }
+    }
+    catch (Throwable ignored) {}
+    return result
+}
+
+def stubsProps = getPropertiesMapFromFile(stubsConfigProperties)
+if (stubsProps.containsKey(stubsEnabledKey) && stubsProps.get(stubsEnabledKey) == 'true') {
+    def logsEnabled = stubsProps.containsKey(stubsLogsEnabledKey) && stubsProps.get(stubsLogsEnabledKey) == 'true'
+    if (logsEnabled) {
+        println("Stubs mode activated")
+    }
+
+    def overallProjects = flattenProjects(rootProject)
+    def filteredProjects = excludeProjectsByPaths(overallProjects, projectsToExcludeFromHandling)
+    def availableStubsForProjects = getProjectStubsListFromFile(configListStubsAvailable)
+    def activatedStubsForProjects = getProjectStubsListFromFile(configListStubsActivated)
+
+    if (logsEnabled) {
+        println("")
+        println("Projects: ${overallProjects.size()}")
+        println("Available stubs: ${availableStubsForProjects.size()}")
+        println("Activated stubs: ${activatedStubsForProjects.size()}")
+        println("")
+    }
+
+    def projects = filterProjectsByPaths(filterProjectsByPaths(filteredProjects, availableStubsForProjects), activatedStubsForProjects)
+    projects.forEach {
+        def stubDir = getProjectStubDir(it, featureModuleSuffix, stubSuffixes)
+        if (stubDir != null) {
+            if (logsEnabled) {
+                println("Replaced project [${it.projectDir}] with a stub [$stubDir]")
+            }
+            it.projectDir = stubDir
+        }
+    }
+}
