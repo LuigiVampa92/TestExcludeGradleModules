@@ -26,4 +26,5 @@ dependencies {
     implementation project(':testfeature-impl')
     implementation project(':nestedfeature:api')
     implementation project(':nestedfeature:impl')
+    implementation project(':standalonefeature')
 }

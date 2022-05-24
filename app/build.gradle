@@ -43,5 +43,7 @@ dependencies {
     implementation project(':core')
     implementation project(':app-di')
     implementation project(':testfeature-api')
+    implementation project(':nestedfeature:api')
+    implementation project(':standalonefeature')
 
 }

@@ -3,6 +3,7 @@ package com.luigivampa92.app_di
 import com.luigivampa92.core.FeatureApi
 import com.luigivampa92.nestedfeature.api.NestedFeatureApi
 import com.luigivampa92.nestedfeature.impl.NestedFeatureHolder
+import com.luigivampa92.standalonefeature.StandaloneFeature
 import com.luigivampa92.testfeature_api.TestFeatureApi
 import com.luigivampa92.testfeature_impl.TestFeatureHolder
 
@@ -31,6 +32,7 @@ public object DI {
     private fun initDependencies() {
         di[TestFeatureApi::class.java] = TestFeatureHolder()
         di[NestedFeatureApi::class.java] = NestedFeatureHolder()
+        di[StandaloneFeature::class.java] = StandaloneFeature()
     }
 
     @JvmStatic

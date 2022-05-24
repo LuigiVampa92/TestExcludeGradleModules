@@ -19,11 +19,6 @@ include ':testfeature-impl'
 include ':nestedfeature:api'
 include ':nestedfeature:impl'
 
-// грубое решение напрямую
-//project(':testfeature-impl').projectDir = new File('testfeature-noop')
-//project(':nestedfeature:impl').projectDir = new File('nestedfeature/noop')
+include ':standalonefeature'
 
-// решение через простую замену projectDir для модуля, данные читаются из файла с пропертями
-//apply from: "./exclude_simple_replace_project_dir.gradle"
-
-apply from: "./exclude_granulary_from_feature_module_config.gradle"
+apply from: "./exclude.gradle"
