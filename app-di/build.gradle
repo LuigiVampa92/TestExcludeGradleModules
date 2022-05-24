@@ -24,4 +24,6 @@ dependencies {
     implementation project(':core')
     implementation project(':testfeature-api')
     implementation project(':testfeature-impl')
+    implementation project(':nestedfeature:api')
+    implementation project(':nestedfeature:impl')
 }
